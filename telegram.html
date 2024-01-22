@@ -84,7 +84,7 @@
       const currentHour = currentDatetime.getHours();
       const currentMinute = currentDatetime.getMinutes();
 
-      if (currentHour === 22 && currentMinute === 52) {
+      if (currentHour === 22 && currentMinute === 55) {
         fetch("message.txt")
           .then(response => response.text())
           .then(messages => {
