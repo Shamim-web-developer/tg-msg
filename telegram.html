@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Telegram Message Sender</title>
+  <style>
+    .success {
+      color: green;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <h1>Telegram Message Sender</h1>
+  <p id="messages"></p>
+
+  <script type="text/javascript">
+    // ANSI escape codes for colors
+    const GREEN = "\x1b[92m";
+    const RED = "\x1b[91m";
+    const RESET = "\x1b[0m";
+
+    let messageSent = false;
+
+    function readMessagesFromFile(fileContent) {
+      return fileContent.split("\n\n").map(msg => msg.trim());
+    }
+
+    function getRandomMessage(messages) {
+      return messages[Math.floor(Math.random() * messages.length)];
+    }
+
+    function appendMessage(message, className) {
+      const messagesElement = document.getElementById("messages");
+      const messageElement = document.createElement("p");
+      messageElement.textContent = message;
+      messageElement.className = className;
+      messagesElement.appendChild(messageElement);
+    }
+
+    function sendMessage(message) {
+      if (!messageSent) {
+        const BOT_TOKEN = "6594622724:AAHCqs_-J3_9-VlveWmbw6s7tC4I6871tQI";
+        const CHAT_ID = "5935497343";
+
+        const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendmessage`;
+        const payload = { chat_id: CHAT_ID, text: message };
+
+        fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        })
+          .then(response => {
+            if (response.ok) {
+              const currentDatetime = new Date();
+              const formattedDatetime = currentDatetime.toLocaleString();
+              const weekdayName = currentDatetime.toLocaleString('en-us', { weekday: 'short' });
+              const successMessage = `Sent ✔✔ [${formattedDatetime}] ${weekdayName}`;
+              appendMessage(successMessage, "success");
+              messageSent = true;
+            } else {
+              const errorMessage = `Error sending message: ${response.status}`;
+              appendMessage(errorMessage, "error");
+              messageSent = false;
+            }
+          })
+          .catch(error => {
+            const errorMessage = `Error sending message: ${error}`;
+            appendMessage(errorMessage, "error");
+            messageSent = false;
+          });
+      }
+    }
+
+    // Schedule the script to run every day at xx:xx AM/PM
+    function scheduleScript() {
+      const currentDatetime = new Date();
+      const currentHour = currentDatetime.getHours();
+      const currentMinute = currentDatetime.getMinutes();
+
+      if (currentHour === 18 && currentMinute === 12) {
+        fetch("message.txt")
+          .then(response => response.text())
+          .then(messages => {
+            const messageArray = readMessagesFromFile(messages);
+            const randomMessage = getRandomMessage(messageArray);
+            sendMessage(randomMessage);
+          })
+          .catch(error => {
+            const errorMessage = `Error reading messages from file: ${error}`;
+            appendMessage(errorMessage, "error");
+          });
+
+        // Sleep for 24 hours to avoid repeated executions
+        setTimeout(() => {
+          messageSent = false;
+          scheduleScript();
+        }, 24 * 60 * 60 * 1000);
+      } else {
+        // Sleep for a minute before checking the time again
+        setTimeout(scheduleScript, 20 * 1000);
+      }
+    }
+
+    // Initial script execution
+    scheduleScript();
+  </script>
+</body>
+</html>
